@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>spec-review</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* One-page explainer meant to be captured as an image (1200px wide). */
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --fg: #1b2230; --muted: #5b6577; --line: #dde2ea;
+  --accent: #2456c9; --accent-bg: #e6edfb; --code: #11795a; --code-bg: #e5f4ee; --ai: #7a3fd1; --ai-bg: #f0e8fc;
+  --warn: #a85b00; --warn-bg: #fdf0dc; --pre-bg: #eef1f6;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161d; --surface: #1a2029; --fg: #e4e8ef; --muted: #9aa4b5; --line: #2c3440;
+  --accent: #7aa2ff; --accent-bg: #1c2740; --code: #4fd1a1; --code-bg: #15302a; --ai: #b994ff; --ai-bg: #2a2140;
+  --warn: #f2b25c; --warn-bg: #3a2c16; --pre-bg: #0f1319; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1a2029; --fg: #e4e8ef; --muted: #9aa4b5; --line: #2c3440;
+  --accent: #7aa2ff; --accent-bg: #1c2740; --code: #4fd1a1; --code-bg: #15302a; --ai: #b994ff; --ai-bg: #2a2140;
+  --warn: #f2b25c; --warn-bg: #3a2c16; --pre-bg: #0f1319; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 var(--f-body); padding: 0 16px }
+h1, h2, h3 { font-family: var(--f-display); margin: 0; line-height: 1.15; text-wrap: balance }
+p { margin: 0 }
+code { font-family: var(--f-mono); font-size: .86em; background: var(--pre-bg); padding: .1em .4em; border-radius: 4px }
+.page { max-width: 1120px; margin: 0 auto; padding: 48px 0 56px; display: grid; gap: 40px }
+
+.hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center }
+.eyebrow { font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700 }
+.hero h1 { font-size: 3.4rem; letter-spacing: -.01em; margin-top: 8px }
+.hero h1 span { color: var(--accent) }
+.hero .lead { font-size: 1.22rem; color: var(--muted); margin-top: 16px; max-width: 30ch }
+.cmd { margin-top: 22px; display: inline-flex; gap: 10px; align-items: center; background: var(--fg); color: var(--bg);
+  font: 600 1.05rem var(--f-mono); padding: 12px 18px; border-radius: 10px }
+.cmd i { color: var(--code); font-style: normal }
+
+/* before → after */
+.ba { display: grid; grid-template-columns: 1fr 34px 1.25fr; align-items: center; gap: 10px }
+.md-file { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; font: .7rem/1.7 var(--f-mono); color: var(--muted); height: 250px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 75%, transparent); mask-image: linear-gradient(to bottom, #000 75%, transparent) }
+.md-file b { color: var(--fg) }
+.md-file .h { color: var(--accent); font-weight: 600 }
+.arrow-big { font-size: 1.6rem; color: var(--muted); text-align: center }
+.mock { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; height: 250px; display: grid; grid-template-columns: 62px 1fr; overflow: hidden; box-shadow: 0 10px 30px rgba(27, 34, 48, .08) }
+.mock .rail { background: var(--bg); padding: 12px 8px; display: grid; gap: 7px; align-content: start }
+.mock .rail i { display: block; height: 6px; border-radius: 3px; background: var(--line) }
+.mock .rail i.ok { background: var(--code) } .mock .rail i.chg { background: var(--warn) }
+.mock .body { padding: 12px; display: grid; gap: 8px; align-content: start }
+.bar { height: 7px; border-radius: 4px; background: var(--line) }
+.bar.t { height: 11px; width: 55%; background: var(--fg); opacity: .8 }
+.mini-ai { display: flex; gap: 6px; align-items: center }
+.mini-ai em { font: 700 .5rem var(--f-body); font-style: normal; color: var(--ai); background: var(--ai-bg); padding: 2px 5px; border-radius: 99px }
+.mini-flow { display: flex; gap: 5px; align-items: center }
+.mini-flow span { height: 20px; flex: 1; border-radius: 4px }
+.mini-flow b { color: var(--muted); font-size: .6rem }
+.s { background: var(--code-bg) } .a { background: var(--ai-bg); outline: 1.5px dashed var(--ai); outline-offset: -1.5px } .d { background: var(--warn-bg) } .u { background: var(--accent-bg) }
+.mini-dec { display: grid; grid-template-columns: 1fr 1fr; gap: 6px }
+.mini-dec span { height: 30px; border: 1px solid var(--line); border-radius: 5px }
+.mini-btns { display: flex; gap: 5px; margin-top: 2px }
+.mini-btns span { font: 700 .55rem var(--f-body); padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted) }
+.mini-btns span.on { background: var(--code); border-color: var(--code); color: var(--surface) }
+
+/* how it works */
+h2 { font-size: 1.7rem }
+.sec { display: grid; gap: 18px }
+.pipe { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr 28px 1fr; align-items: stretch }
+.step { border-radius: 12px; padding: 18px; display: grid; gap: 8px; align-content: start }
+.step.code { background: var(--code-bg) }
+.step.ai { background: var(--ai-bg); outline: 2px dashed var(--ai); outline-offset: -2px }
+.step.you { background: var(--surface); border: 1px solid var(--line) }
+.step .k { font: 700 .72rem var(--f-mono); letter-spacing: .02em }
+.step.code .k { color: var(--code) } .step.ai .k { color: var(--ai) } .step.you .k { color: var(--accent) }
+.step h3 { font-size: 1.12rem }
+.step p { font-size: .92rem; color: var(--muted) }
+.step .cost { margin-top: 4px; font: 600 .78rem var(--f-mono); color: var(--fg) }
+.pipe .arr { align-self: center; text-align: center; color: var(--muted); font-size: 1.2rem }
+
+.guard { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--code); border-radius: 0 10px 10px 0; padding: 14px 18px; font-size: .98rem }
+.guard b { color: var(--code) }
+
+/* what you get + cost */
+.two { display: grid; grid-template-columns: 1.35fr 1fr; gap: 24px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px; display: grid; gap: 14px; align-content: start }
+.gets { display: grid; grid-template-columns: 1fr 1fr; gap: 14px }
+.get { display: grid; gap: 4px }
+.get b { font-size: 1rem }
+.get span { font-size: .9rem; color: var(--muted) }
+.tag { display: inline-block; font: 700 .62rem var(--f-body); letter-spacing: .05em; padding: 2px 7px; border-radius: 99px; margin-left: 6px; vertical-align: 2px }
+.tag.ai { background: var(--ai-bg); color: var(--ai) } .tag.code { background: var(--code-bg); color: var(--code) }
+.cost-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: baseline }
+.cost-row:last-child { border-bottom: 0 }
+.cost-row strong { font: 700 1.4rem var(--f-display); font-variant-numeric: tabular-nums }
+.cost-row span { font-size: .92rem; color: var(--muted) }
+.cost-row code { font-size: .8rem }
+
+/* install */
+.install { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px }
+.inst { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 10px; align-content: start }
+.inst .n { font: 700 1.8rem/1 var(--f-display); color: var(--accent) }
+.inst pre { margin: 0; background: var(--pre-bg); border-radius: 8px; padding: 10px 12px; font: .76rem/1.5 var(--f-mono); white-space: pre; overflow-x: auto }
+.inst p { font-size: .92rem; color: var(--muted) }
+.foot { font-size: .85rem; color: var(--muted); text-align: center }
+
+@media (max-width: 900px) {
+  .hero, .two, .install { grid-template-columns: minmax(0, 1fr) }
+  .pipe { grid-template-columns: minmax(0, 1fr); gap: 8px } .pipe .arr { transform: rotate(90deg) }
+  .ba { grid-template-columns: minmax(0, 1fr) } .arrow-big { transform: rotate(90deg) }
+  .gets { grid-template-columns: minmax(0, 1fr) }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div>
+      <div class="eyebrow">A Claude Code skill</div>
+      <h1>From a Markdown spec to a <span>review page</span></h1>
+      <p class="lead">Every section with its summary, its decisions and its flow drawn out. Mark each one OK or Change, then copy your comments back to Claude.</p>
+      <div class="cmd"><i>›</i> /spec-review docs/specs/my-feature.md</div>
+    </div>
+    <div class="ba" aria-hidden="true">
+      <div class="md-file">
+        <div class="h"># My feature — design</div>
+        <div>Status: draft…</div><br>
+        <div class="h">## 1. Why</div>
+        <div>Today every user has to…</div>
+        <div>- <b>**D1.**</b> One entry per…</div>
+        <div>- <b>**D2.**</b> No changes to…</div><br>
+        <div class="h">## 2. Flow</div>
+        <div>1. The app detects…</div>
+        <div>2. If already approved…</div>
+        <div>3. If not, it asks…</div>
+      </div>
+      <div class="arrow-big">→</div>
+      <div class="mock">
+        <div class="rail"><i class="ok"></i><i class="ok"></i><i class="chg"></i><i></i><i></i><i></i></div>
+        <div class="body">
+          <div class="bar t"></div>
+          <div class="mini-ai"><em>AI</em><div class="bar" style="flex:1"></div></div>
+          <div class="mini-flow"><span class="s"></span><b>→</b><span class="d"></span><b>→</b><span class="u"></span><b>→</b><span class="a"></span></div>
+          <div class="mini-dec"><span></span><span></span></div>
+          <div class="bar" style="width:90%"></div>
+          <div class="bar" style="width:75%"></div>
+          <div class="mini-btns"><span class="on">OK</span><span>Change</span></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="sec">
+    <h2>How it works</h2>
+    <div class="pipe">
+      <div class="step code">
+        <span class="k">1 · SCRIPT</span>
+        <h3>Reads the Markdown</h3>
+        <p>Splits the document into sections with line numbers. Long code blocks shrink to one line.</p>
+        <span class="cost">0 tokens</span>
+      </div>
+      <div class="arr">→</div>
+      <div class="step ai">
+        <span class="k">2 · AI (SONNET)</span>
+        <h3>Writes notes</h3>
+        <p>A small JSON: a summary per section, decisions with their why and, where it helps, a flow.</p>
+        <span class="cost">~2k output tokens</span>
+      </div>
+      <div class="arr">→</div>
+      <div class="step code">
+        <span class="k">3 · SCRIPT</span>
+        <h3>Builds the HTML</h3>
+        <p>Checks the notes and writes the whole page: styles, diagrams, review controls.</p>
+        <span class="cost">0 tokens</span>
+      </div>
+      <div class="arr">→</div>
+      <div class="step you">
+        <span class="k">4 · YOU</span>
+        <h3>Review</h3>
+        <p>OK or Change with a note on each section. One button copies it all to paste back to Claude.</p>
+      </div>
+    </div>
+    <div class="guard"><span><b>The AI can't make things up:</b> every decision and every flow step must cite the spec lines it comes from. Anything without real line numbers is dropped by the script. The full text is always right below.</span></div>
+  </section>
+
+  <section class="two">
+    <div class="card">
+      <h2>What the page gives you</h2>
+      <div class="gets">
+        <div class="get"><b>Section summaries <span class="tag ai">AI</span></b><span>What each part decides or delivers, in one line.</span></div>
+        <div class="get"><b>Decisions <span class="tag ai">AI</span></b><span>What's worth pushing back on: X over Y, limits, what's left out.</span></div>
+        <div class="get"><b>Flow diagrams <span class="tag ai">AI</span></b><span>Only where there are ordered steps or branches. Otherwise, none.</span></div>
+        <div class="get"><b>Guided review <span class="tag code">CODE</span></b><span>Progress, OK / Change, notes saved in the browser.</span></div>
+        <div class="get"><b>Full text <span class="tag code">CODE</span></b><span>Tables, code and lists nicely formatted, light and dark.</span></div>
+        <div class="get"><b>Long plans <span class="tag code">CODE</span></b><span>One section per task, with code folded away.</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>What it costs</h2>
+      <div>
+        <div class="cost-row"><span>Typical spec, Sonnet</span><strong>~$0.10</strong></div>
+        <div class="cost-row"><span>Large plan, Sonnet</span><strong>~$0.15</strong></div>
+        <div class="cost-row"><span>With <code>--fast</code> (Haiku)</span><strong>~$0.01</strong></div>
+        <div class="cost-row"><span>Re-render when the .md hasn't changed</span><strong>$0</strong></div>
+      </div>
+      <p class="foot" style="text-align:left">API pricing. On a subscription it uses your quota, not dollars.</p>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Install</h2>
+    <div class="install">
+      <div class="inst"><span class="n">1</span><p>Download <code>spec-review.zip</code> from the message and unzip it into your skills:</p><pre>unzip spec-review.zip -d ~/.claude/skills/</pre></div>
+      <div class="inst"><span class="n">2</span><p>In Claude Code, give it a spec or a plan:</p><pre>/spec-review docs/specs/my-feature.md</pre></div>
+      <div class="inst"><span class="n">3</span><p>Open the <code>.review.html</code> next to the file. Options:</p><pre>--fast     Haiku, cheaper
+--no-ai    no AI, formatting only
+--lang en  English page labels</pre></div>
+    </div>
+    <p class="foot">Needs Node 18 or newer. No dependencies, no plugins.</p>
+  </section>
+
+</div>
+</body>
+</html>
