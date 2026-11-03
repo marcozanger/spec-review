@@ -4,6 +4,9 @@
 //
 //   node render.mjs <file.md> [--notes path] [--out path] [--lang es|en]
 //   node render.mjs <file.md> --status     → prints fresh | stale | missing
+//   --artifact: page meant to be published as a claude.ai Artifact (declared
+//   with capabilities {comments: {}}); adds a "Send to Claude" button that posts
+//   the review as a comment the publishing session receives.
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,6 +38,7 @@ if (args.includes("--status")) {
 }
 
 const S = STRINGS[opt("--lang") || "es"] || STRINGS.es;
+const artifact = args.includes("--artifact");
 const { notes, report } = raw ? checkNotes(raw, doc) : { notes: null, report: null };
 const here = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(join(here, "../assets/page.css"), "utf8");
@@ -99,7 +103,7 @@ const pre = doc.sections.length && doc.preamble.end >= doc.preamble.start
 const legend = [...KINDS].filter(k => usedKinds.has(k)).map(k => `<span class="chip k-${k}">${esc(S.kinds[k])}</span>`).join("");
 
 const config = {
-  key: basename(file), title: plain(doc.title), file: basename(file), mermaidUrl: MERMAID_URL,
+  key: basename(file), title: plain(doc.title), file: basename(file), mermaidUrl: MERMAID_URL, artifact,
   strings: Object.fromEntries(Object.entries(S).filter(([, v]) => typeof v === "string")),
 };
 
@@ -134,9 +138,13 @@ ${css}
 ${sectionsHtml}
     <section class="summary" aria-labelledby="send-h">
       <h2 id="send-h">${esc(S.sendTitle)}</h2>
-      <p class="muted">${esc(S.sendHelp)}</p>
+      <p class="muted">${esc(artifact ? S.sendHelpArtifact : S.sendHelp)}</p>
       <pre id="out"></pre>
-      <button class="btn" id="copy" type="button">${esc(S.copy)}</button>
+      <div class="actions">
+        ${artifact ? `<button class="btn" id="send" type="button" hidden>${esc(S.sendClaude)}</button>` : ""}
+        <button class="btn${artifact ? " ghost" : ""}" id="copy" type="button">${esc(S.copy)}</button>
+      </div>
+      ${artifact ? `<p class="muted" id="send-status" role="status" aria-live="polite"></p>` : ""}
     </section>
   </main>
 </div>
@@ -151,7 +159,7 @@ ${js}
 const out = opt("--out") || htmlPath(file);
 writeFileSync(out, html);
 
-console.log(`wrote ${out}`);
+console.log(`wrote ${out}${artifact ? " (artifact: publish with capabilities {comments: {}})" : ""}`);
 if (!report) console.log("notes: none (plain page)");
 else if (report.error) console.log(`notes: ignored (${raw.parseError ? "invalid JSON: " + raw.parseError : report.error})`);
 else {
