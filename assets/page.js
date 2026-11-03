@@ -81,6 +81,71 @@
     try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
   });
 
+  // Artifact mode: send the review to the Claude session that published the
+  // page, as a comment thread (comments.sendToClaude). The copy button stays
+  // as the fallback for every case where sending is not possible.
+  if (D.artifact && window.claude && typeof window.claude.use === "function") setupSend();
+
+  async function setupSend() {
+    const send = document.getElementById("send"), status = document.getElementById("send-status");
+    const box = document.querySelector("main .summary");
+    let comments = null;
+    try { comments = await window.claude.use("comments"); } catch (e) { comments = null; }
+    if (!comments || typeof comments.sendToClaude !== "function") return;
+    const check = async () => {
+      let can = "off";
+      try { can = await comments.canSendToClaude(); } catch (e) { can = "off"; }
+      send.hidden = false;
+      send.disabled = can !== "available";
+      status.textContent = can === "available" ? "" : can === "no_session" ? S.claudeNoSession : S.claudeOff;
+      return can === "available";
+    };
+    await check();
+    // Watching sessions are learned asynchronously: re-check once shortly after load.
+    setTimeout(check, 4000);
+
+    send.addEventListener("click", async () => {
+      if (!(await check())) return;
+      const text = claudeText();
+      if (!text) { status.textContent = S.nothing; return; }
+      send.disabled = true; send.textContent = S.sending; status.textContent = "";
+      try {
+        const anchor = await comments.anchorFor(box);
+        await comments.sendToClaude({ anchor, text });
+        status.textContent = S.sentClaude;
+      } catch (e) {
+        const code = (e && e.code) || "error";
+        status.textContent = code === "claude_unavailable" ? S.claudeNoSession : fill(S.claudeFailed, { code });
+        send.disabled = false;
+      }
+      send.textContent = S.sendClaude;
+    });
+  }
+
+  // Comments are limited to 4 KiB: keep every CHANGE and note in full, fold the
+  // plain OKs into one line, and cut at the limit as a last resort.
+  function claudeText() {
+    const oks = [], rest = [];
+    sections.forEach(s => {
+      const st = state[s.dataset.title] || {}, note = (st.note || "").trim();
+      if (!st.status && !note) return;
+      if (st.status === "ok" && !note) { oks.push(s.dataset.title); return; }
+      const tag = st.status === "ok" ? S.tagOk : st.status === "change" ? S.tagChange : S.tagNote;
+      rest.push(`- ${s.dataset.title}: ${tag}${note ? " — " + note : ""}`);
+    });
+    if (!oks.length && !rest.length) return "";
+    const done = sections.filter(s => (state[s.dataset.title] || {}).status).length;
+    const head = `[spec-review] ${fill(S.reviewOf, { title: D.title })} (${D.file}) · ${fill(S.progress, { done, total: sections.length })}`;
+    let text = [head, ...rest, oks.length ? `- ${S.tagOk}: ${oks.join("; ")}` : ""].filter(Boolean).join("\n");
+    const enc = new TextEncoder(), MAX = 4000;
+    if (enc.encode(text).length > MAX) {
+      const tail = "\n" + S.truncated;
+      while (enc.encode(text + tail).length > MAX) text = text.slice(0, Math.floor(text.length * 0.95));
+      text += tail;
+    }
+    return text;
+  }
+
   const graphs = [...document.querySelectorAll(".mmd[data-src]")];
   if (!graphs.length) return;
   import(D.mermaidUrl).then(({ default: mermaid }) => {
