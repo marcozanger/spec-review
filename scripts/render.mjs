@@ -17,6 +17,7 @@ import { renderBlocks, inline, plain, esc } from "./lib/md.mjs";
 import { checkNotes, KINDS } from "./lib/notes.mjs";
 import { notesPath, htmlPath } from "./lib/paths.mjs";
 import { STRINGS, fill } from "./lib/strings.mjs";
+import { renderFoldable } from "./lib/fold.mjs";
 import { imageEmbedder, WARN_BYTES } from "./lib/images.mjs";
 
 const MERMAID_URL = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";
@@ -80,7 +81,7 @@ function flowHtml(f) {
 function sectionHtml(s) {
   const n = notes?.sections[s.id];
   const body = bodyLines(doc, s);
-  const md = `<div class="md">${renderBlocks(body, S)}</div>`;
+  const md = `<div class="md">${renderFoldable(body, s.level, S)}</div>`;
   const parts = [];
   if (n?.summary) parts.push(`<p class="lead">${aiTag}${inline(n.summary)}</p>`);
   if (n?.flow) parts.push(flowHtml(n.flow));
