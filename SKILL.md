@@ -32,7 +32,8 @@ If the `Artifact` tool is available in this session and `--html` was not passed,
    Wait for it to finish. Don't read the JSON it wrote.
 
 3. Render the page:
-   `node "${CLAUDE_SKILL_DIR}/scripts/render.mjs" "<file>" [--lang en] [--artifact]`
+   `node "${CLAUDE_SKILL_DIR}/scripts/render.mjs" "<file>" [--lang en] [--artifact] [--base <folder>]`
+   When `<file>` is a translated or otherwise moved copy (for example in the scratchpad), pass `--base` with the original document's folder so its local images are found. The script lists any image it could not find; fix the path or the flag before publishing.
    Pass `--artifact` in artifact mode. It prints the HTML path and how many notes it kept or dropped.
 
 4. HTML mode: reply in two or three lines: the HTML path (the user opens it in a browser), and the script's notes line. If it dropped many notes and `--fast` was used, suggest running without it.

@@ -2,6 +2,7 @@
 // fenced code, tables, blockquotes, rules, and inline code/bold/italic/links.
 // Raw HTML in the source is shown as text, never injected.
 import { isFenceClose } from "./doc.mjs";
+import { parseDecision, KEYS } from "./decisions.mjs";
 
 const FENCE = /^(\s{0,3})(`{3,}|~{3,})\s*([^\s`]*)/;
 const HEADING = /^\s{0,3}(#{1,6})\s+(.*?)(?:\s+#+)?\s*$/;
@@ -47,6 +48,34 @@ export function plain(src) {
 
 const indentOf = l => l.match(/^\s*/)[0].replace(/\t/g, "    ").length;
 const blank = l => !l || !l.trim();
+
+// Before/after pair: an image line whose alt starts with Before:/Antes:, then
+// (blank lines allowed) one whose alt starts with After:/Después:, then
+// optionally a line that is only a link (the mockup). A typo in a label just
+// gives two ordinary images.
+const IMG_LINE = /^\s{0,3}!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$/;
+const LINK_LINE = /^\s{0,3}\[([^\]]+)\]\(([^)\s]+)\)\s*$/;
+const BEFORE = /^(before|antes)\s*:/i;
+const AFTER = /^(after|despu[eé]s)\s*:/i;
+
+const nextFilled = (lines, i) => { while (i < lines.length && blank(lines[i])) i++; return i; };
+
+function matchPair(lines, i) {
+  const b = lines[i].match(IMG_LINE);
+  if (!b || !BEFORE.test(b[1].trim())) return null;
+  const j = nextFilled(lines, i + 1);
+  const a = j < lines.length && lines[j].match(IMG_LINE);
+  if (!a || !AFTER.test(a[1].trim())) return null;
+  const k = nextFilled(lines, j + 1);
+  const link = k < lines.length && lines[k].match(LINK_LINE);
+  return { before: b, after: a, link: link || null, next: link ? k + 1 : j + 1 };
+}
+
+function pairHtml(p) {
+  const side = (m, extra = "") => `<figure>${inline(`![${m[1]}](${m[2]})`)}<figcaption>${inline(m[1])}</figcaption>${extra}</figure>`;
+  const mockup = p.link ? `<a class="mockup" href="${safeUrl(esc(p.link[2]))}">${inline(p.link[1])}</a>` : "";
+  return `<div class="pair">${side(p.before)}${side(p.after, mockup)}</div>`;
+}
 
 function isBlockStart(l) {
   return FENCE.test(l) || HEADING.test(l) || HR.test(l) || QUOTE.test(l);
@@ -109,6 +138,9 @@ export function renderBlocks(lines, labels, minHeading = 3) {
 
     if (HR.test(l)) { out.push("<hr>"); i++; continue; }
 
+    const pair = matchPair(lines, i);
+    if (pair) { out.push(pairHtml(pair)); i = pair.next; continue; }
+
     if (l.includes("|") && i + 1 < lines.length && TABLE_SEP.test(lines[i + 1]) && lines[i + 1].includes("-")) {
       const head = splitRow(l);
       const align = splitRow(lines[i + 1]).map(c => c.startsWith(":") && c.endsWith(":") ? "center" : c.endsWith(":") ? "right" : "");
@@ -146,6 +178,18 @@ export function renderBlocks(lines, labels, minHeading = 3) {
     out.push(`<p>${inline(para.join("\n"))}</p>`);
   }
   return out.join("\n");
+}
+
+// A list item written as a full decision becomes a card. Items with blank
+// lines or nested blocks never do.
+function cardFor(body) {
+  if (body.some((l, k) => blank(l) || (k > 0 && (LI.test(l) || isBlockStart(l))))) return null;
+  return parseDecision(body.join("\n"));
+}
+
+function cardHtml(d) {
+  const row = p => `<dt>${inline(p.label)}</dt><dd>${inline(p.text)}</dd>`;
+  return `<p class="choice"><strong>${inline(d.choice)}</strong></p><dl>${KEYS.map(k => row(d[k])).join("")}</dl>`;
 }
 
 function parseList(lines, i, labels, minHeading) {
@@ -189,7 +233,9 @@ function parseList(lines, i, labels, minHeading) {
     }
   }
 
-  const lis = items.map(body => {
+  const cards = items.map(cardFor);
+  const lis = items.map((body, n) => {
+    if (cards[n]) return `<li class="dcard">${cardHtml(cards[n])}</li>`;
     let check = "";
     const t = body[0].match(/^\[([ xX])\]\s+(.*)$/);
     if (t) {
@@ -201,5 +247,6 @@ function parseList(lines, i, labels, minHeading) {
     return `<li${check ? ' class="task"' : ""}>${check}${inner}</li>`;
   });
   const tag = ordered ? "ol" : "ul";
-  return { html: `<${tag}${ordered && start !== 1 ? ` start="${start}"` : ""}>${lis.join("")}</${tag}>`, next: i };
+  const cls = cards.every(Boolean) ? ' class="dcards"' : "";
+  return { html: `<${tag}${cls}${ordered && start !== 1 ? ` start="${start}"` : ""}>${lis.join("")}</${tag}>`, next: i };
 }

@@ -13,7 +13,9 @@ function validLines(v, s) {
   return [a, b];
 }
 
-export function checkNotes(raw, doc) {
+// cards: 1-based line ranges of decision cards (decisions.mjs cardRanges); the
+// page already shows those decisions as written, so AI decisions citing them go.
+export function checkNotes(raw, doc, cards = []) {
   const report = { summaries: 0, decisions: 0, flows: 0, dropped: [] };
   const drop = msg => report.dropped.push(msg);
   const out = { doc: {}, sections: {} };
@@ -39,6 +41,7 @@ export function checkNotes(raw, doc) {
     for (const d of Array.isArray(n.decisions) ? n.decisions.slice(0, 8) : []) {
       const text = str(d?.text, MAX.decisionText), lines = validLines(d?.lines, s);
       if (!text || !lines) { drop(`${s.id} decision "${String(d?.text).slice(0, 40)}" (${!text ? "text" : "lines"})`); continue; }
+      if (cards.some(([a, b]) => lines[0] <= b && lines[1] >= a)) { drop(`${s.id} decision "${text.slice(0, 40)}" (shown as a card)`); continue; }
       note.decisions.push({ text, why: str(d.why, MAX.why), lines });
     }
     report.decisions += note.decisions.length;

@@ -22,6 +22,7 @@ export const STRINGS = {
     truncated: "… (recortado: el resto está en Copiar comentarios)",
     reviewOf: "Revisión de {title}", tagOk: "OK", tagChange: "CAMBIAR", tagNote: "nota",
     intro: "Introducción",
+    imgMissing: "Imagen no encontrada: {path}",
     code: (lang, n) => `Código${lang ? " " + lang : ""} · ${n} líneas`,
   },
   en: {
@@ -47,6 +48,7 @@ export const STRINGS = {
     truncated: "… (cut: the rest is in Copy comments)",
     reviewOf: "Review of {title}", tagOk: "OK", tagChange: "CHANGE", tagNote: "note",
     intro: "Introduction",
+    imgMissing: "Image not found: {path}",
     code: (lang, n) => `Code${lang ? " " + lang : ""} · ${n} lines`,
   },
 };
