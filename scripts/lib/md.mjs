@@ -2,6 +2,7 @@
 // fenced code, tables, blockquotes, rules, and inline code/bold/italic/links.
 // Raw HTML in the source is shown as text, never injected.
 import { isFenceClose } from "./doc.mjs";
+import { parseDecision, KEYS } from "./decisions.mjs";
 
 const FENCE = /^(\s{0,3})(`{3,}|~{3,})\s*([^\s`]*)/;
 const HEADING = /^\s{0,3}(#{1,6})\s+(.*?)(?:\s+#+)?\s*$/;
@@ -179,6 +180,18 @@ export function renderBlocks(lines, labels, minHeading = 3) {
   return out.join("\n");
 }
 
+// A list item written as a full decision becomes a card. Items with blank
+// lines or nested blocks never do.
+function cardFor(body) {
+  if (body.some((l, k) => blank(l) || (k > 0 && (LI.test(l) || isBlockStart(l))))) return null;
+  return parseDecision(body.join("\n"));
+}
+
+function cardHtml(d) {
+  const row = p => `<dt>${inline(p.label)}</dt><dd>${inline(p.text)}</dd>`;
+  return `<p class="choice"><strong>${inline(d.choice)}</strong></p><dl>${KEYS.map(k => row(d[k])).join("")}</dl>`;
+}
+
 function parseList(lines, i, labels, minHeading) {
   const first = lines[i].match(LI);
   const base = indentOf(lines[i]);
@@ -220,7 +233,9 @@ function parseList(lines, i, labels, minHeading) {
     }
   }
 
-  const lis = items.map(body => {
+  const cards = items.map(cardFor);
+  const lis = items.map((body, n) => {
+    if (cards[n]) return `<li class="dcard">${cardHtml(cards[n])}</li>`;
     let check = "";
     const t = body[0].match(/^\[([ xX])\]\s+(.*)$/);
     if (t) {
@@ -232,5 +247,6 @@ function parseList(lines, i, labels, minHeading) {
     return `<li${check ? ' class="task"' : ""}>${check}${inner}</li>`;
   });
   const tag = ordered ? "ol" : "ul";
-  return { html: `<${tag}${ordered && start !== 1 ? ` start="${start}"` : ""}>${lis.join("")}</${tag}>`, next: i };
+  const cls = cards.every(Boolean) ? ' class="dcards"' : "";
+  return { html: `<${tag}${cls}${ordered && start !== 1 ? ` start="${start}"` : ""}>${lis.join("")}</${tag}>`, next: i };
 }

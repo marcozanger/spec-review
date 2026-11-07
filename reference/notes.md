@@ -19,6 +19,7 @@ The page shows the full text of every section. Your notes go on top of each sect
 
 - `summary` (up to 160 chars): what the section decides, delivers or changes. Every section gets one, except trivial ones (a link list, an empty heading).
 - `decisions` (0–6): choices the document makes that a reviewer could disagree with: X instead of Y, limits and defaults, things left out on purpose, trade-offs. Not plain facts or descriptions. `text` up to 140 chars. Add `why` (up to 160 chars) only when the document gives the reason. Most sections have 0–2 decisions; a "Decisions" section may have more.
+- Skip a decision the document already writes as a card: a list item that starts with the chosen option in bold, then `Alternatives:`, `Pros:`, `Cons:` and `Why:` (or `Alternativas:`, `Pros:`, `Contras:`, `Por qué:`). The page shows it as written, and the script drops any decision that cites its lines.
 - `flow` (optional): see below.
 
 For implementation plans, the sections are mostly tasks. A task's summary is what it delivers ("Adds the file index and its rebuild command"), not its steps. Decisions only where the plan makes a choice, for example in "Decisions this plan takes" or "Conflicts with the spec".

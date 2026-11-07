@@ -17,6 +17,7 @@ import { renderBlocks, inline, plain, esc } from "./lib/md.mjs";
 import { checkNotes, KINDS } from "./lib/notes.mjs";
 import { notesPath, htmlPath } from "./lib/paths.mjs";
 import { STRINGS, fill } from "./lib/strings.mjs";
+import { cardRanges } from "./lib/decisions.mjs";
 import { renderFoldable } from "./lib/fold.mjs";
 import { imageEmbedder, WARN_BYTES } from "./lib/images.mjs";
 
@@ -44,7 +45,7 @@ if (args.includes("--status")) {
 const S = STRINGS[opt("--lang") || "es"] || STRINGS.es;
 const artifact = args.includes("--artifact");
 const images = imageEmbedder(opt("--base") || dirname(file), S);
-const { notes, report } = raw ? checkNotes(raw, doc) : { notes: null, report: null };
+const { notes, report } = raw ? checkNotes(raw, doc, cardRanges(doc.lines, doc.inFence)) : { notes: null, report: null };
 const here = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(join(here, "../assets/page.css"), "utf8");
 const js = readFileSync(join(here, "../assets/page.js"), "utf8");
