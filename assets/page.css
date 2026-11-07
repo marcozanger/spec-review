@@ -122,6 +122,15 @@ details.full > summary { cursor: pointer; font-size: .85rem; color: var(--muted)
 details.fold { border: 1px solid var(--line); border-radius: 8px; background: var(--surface) }
 details.fold > summary { cursor: pointer; padding: 10px 14px; font: 700 1rem var(--f-display) }
 details.fold > .md { padding: 0 14px 14px }
+
+/* decision cards */
+.md ul.dcards, .md ol.dcards { list-style: none; padding-left: 0; gap: 12px }
+.md li.dcard { list-style: none; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--warn);
+  border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px }
+.dcard dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; font-size: .92rem }
+.dcard dt { font-weight: 600; color: var(--muted) }
+.dcard dd { margin: 0 }
+@media (max-width: 560px) { .dcard dl { grid-template-columns: minmax(0, 1fr) } .dcard dd { margin-bottom: 6px } }
 .md details.code > summary { cursor: pointer; font-family: var(--f-mono); font-size: .8rem; color: var(--muted); padding: 6px 0 }
 .tbl { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; max-width: 100% }
 table { border-collapse: collapse; width: 100%; font-size: .9rem }
