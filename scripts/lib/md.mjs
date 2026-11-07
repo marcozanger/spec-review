@@ -48,6 +48,34 @@ export function plain(src) {
 const indentOf = l => l.match(/^\s*/)[0].replace(/\t/g, "    ").length;
 const blank = l => !l || !l.trim();
 
+// Before/after pair: an image line whose alt starts with Before:/Antes:, then
+// (blank lines allowed) one whose alt starts with After:/Después:, then
+// optionally a line that is only a link (the mockup). A typo in a label just
+// gives two ordinary images.
+const IMG_LINE = /^\s{0,3}!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$/;
+const LINK_LINE = /^\s{0,3}\[([^\]]+)\]\(([^)\s]+)\)\s*$/;
+const BEFORE = /^(before|antes)\s*:/i;
+const AFTER = /^(after|despu[eé]s)\s*:/i;
+
+const nextFilled = (lines, i) => { while (i < lines.length && blank(lines[i])) i++; return i; };
+
+function matchPair(lines, i) {
+  const b = lines[i].match(IMG_LINE);
+  if (!b || !BEFORE.test(b[1].trim())) return null;
+  const j = nextFilled(lines, i + 1);
+  const a = j < lines.length && lines[j].match(IMG_LINE);
+  if (!a || !AFTER.test(a[1].trim())) return null;
+  const k = nextFilled(lines, j + 1);
+  const link = k < lines.length && lines[k].match(LINK_LINE);
+  return { before: b, after: a, link: link || null, next: link ? k + 1 : j + 1 };
+}
+
+function pairHtml(p) {
+  const side = (m, extra = "") => `<figure>${inline(`![${m[1]}](${m[2]})`)}<figcaption>${inline(m[1])}</figcaption>${extra}</figure>`;
+  const mockup = p.link ? `<a class="mockup" href="${safeUrl(esc(p.link[2]))}">${inline(p.link[1])}</a>` : "";
+  return `<div class="pair">${side(p.before)}${side(p.after, mockup)}</div>`;
+}
+
 function isBlockStart(l) {
   return FENCE.test(l) || HEADING.test(l) || HR.test(l) || QUOTE.test(l);
 }
@@ -108,6 +136,9 @@ export function renderBlocks(lines, labels, minHeading = 3) {
     }
 
     if (HR.test(l)) { out.push("<hr>"); i++; continue; }
+
+    const pair = matchPair(lines, i);
+    if (pair) { out.push(pairHtml(pair)); i = pair.next; continue; }
 
     if (l.includes("|") && i + 1 < lines.length && TABLE_SEP.test(lines[i + 1]) && lines[i + 1].includes("-")) {
       const head = splitRow(l);
