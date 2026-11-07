@@ -118,6 +118,10 @@ details.full > summary { cursor: pointer; font-size: .85rem; color: var(--muted)
 .pair img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface) }
 .pair figcaption { font-size: .82rem; color: var(--muted) }
 .pair .mockup { justify-self: start; font-weight: 600; font-size: .88rem }
+/* folded detail */
+details.fold { border: 1px solid var(--line); border-radius: 8px; background: var(--surface) }
+details.fold > summary { cursor: pointer; padding: 10px 14px; font: 700 1rem var(--f-display) }
+details.fold > .md { padding: 0 14px 14px }
 .md details.code > summary { cursor: pointer; font-family: var(--f-mono); font-size: .8rem; color: var(--muted); padding: 6px 0 }
 .tbl { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; max-width: 100% }
 table { border-collapse: collapse; width: 100%; font-size: .9rem }

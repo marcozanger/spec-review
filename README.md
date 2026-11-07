@@ -35,4 +35,6 @@ Local images (`![alt](img/screen.png)`) are embedded in the page, so the same fi
 
 Before/after: two consecutive images whose alt text starts with `Before:` and `After:` (or `Antes:` and `Después:`) show side by side. A line right after them that is only a link (`[Open mockup](https://…)`) becomes a button under the after image.
 
+Folded detail: a line `<!-- fold -->` right under a heading folds every subsection under it, one click to open (GitHub and other viewers hide the comment). A folded section stays one review section. Any other raw HTML still shows as text.
+
 No dependencies: the Markdown renderer is in `scripts/lib/md.mjs`. Branching flow diagrams load Mermaid from a CDN when the page opens; offline they show as a list.

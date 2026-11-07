@@ -24,6 +24,19 @@ export function isFenceClose(line, fence) {
   return t.length >= fence.length && t.split("").every(c => c === fence[0]) && /^\s{0,3}\S/.test(line);
 }
 
+// `<!-- fold -->` on the first non-blank line under a heading folds that
+// heading's subsections on the page.
+export const FOLD_MARKER = /^\s{0,3}<!--\s*fold\s*-->\s*$/;
+
+// 0-based index of a fold marker that is the first non-blank line at or after `from`, else -1.
+export function foldMarkerAt(lines, from) {
+  for (let i = from; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    return FOLD_MARKER.test(lines[i]) ? i : -1;
+  }
+  return -1;
+}
+
 // Marks each line as inside a fenced code block or not.
 export function fenceMap(lines) {
   const inFence = new Array(lines.length).fill(false);
@@ -68,6 +81,7 @@ export function parseDoc(src, fileName) {
     const size = s.end - s.start + 1;
     const kids = sub.filter(h => h.level === s.level + 1 && h.line > s.start && h.line <= s.end);
     if (kids.length < 2 || size < lines.length * SPLIT_SHARE || size < SPLIT_MIN_LINES) return [s];
+    if (foldMarkerAt(lines, s.start) !== -1) return [s]; // folded: one review section, subsections folded inside
     const out = [];
     if (hasContent(lines, s.start + 1, kids[0].line - 1)) out.push({ ...s, end: kids[0].line - 1 });
     kids.forEach((h, k) => out.push({
