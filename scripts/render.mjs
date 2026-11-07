@@ -4,6 +4,8 @@
 //
 //   node render.mjs <file.md> [--notes path] [--out path] [--lang es|en]
 //   node render.mjs <file.md> --status     → prints fresh | stale | missing
+//   --base <folder>: resolve relative image paths against this folder instead
+//   of the document's own (use it when rendering a translated or moved copy).
 //   --artifact: page meant to be published as a claude.ai Artifact (declared
 //   with capabilities {comments: {}}); adds a "Send to Claude" button that posts
 //   the review as a comment the publishing session receives.
@@ -15,13 +17,14 @@ import { renderBlocks, inline, plain, esc } from "./lib/md.mjs";
 import { checkNotes, KINDS } from "./lib/notes.mjs";
 import { notesPath, htmlPath } from "./lib/paths.mjs";
 import { STRINGS, fill } from "./lib/strings.mjs";
+import { imageEmbedder, WARN_BYTES } from "./lib/images.mjs";
 
 const MERMAID_URL = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";
 const OPEN_MAX_LINES = 120; // longer sections start with the full text folded when they have notes
 
 const args = process.argv.slice(2);
 const opt = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : null; };
-const file = args.find((a, i) => !a.startsWith("--") && !["--notes", "--out", "--lang"].includes(args[i - 1]));
+const file = args.find((a, i) => !a.startsWith("--") && !["--notes", "--out", "--lang", "--base"].includes(args[i - 1]));
 if (!file) { console.error("usage: node render.mjs <file.md> [--notes path] [--out path] [--lang es|en] [--status]"); process.exit(2); }
 
 const doc = parseDoc(readFileSync(file, "utf8"), basename(file));
@@ -39,6 +42,7 @@ if (args.includes("--status")) {
 
 const S = STRINGS[opt("--lang") || "es"] || STRINGS.es;
 const artifact = args.includes("--artifact");
+const images = imageEmbedder(opt("--base") || dirname(file), S);
 const { notes, report } = raw ? checkNotes(raw, doc) : { notes: null, report: null };
 const here = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(join(here, "../assets/page.css"), "utf8");
@@ -95,11 +99,11 @@ function sectionHtml(s) {
 </section>`;
 }
 
-const sectionsHtml = doc.sections.length
+const sectionsHtml = images.embed(doc.sections.length
   ? doc.sections.map(sectionHtml).join("\n")
-  : sectionHtml({ id: "s1", title: S.intro, name: S.intro, start: doc.preamble.start - 1, end: doc.preamble.end, parent: null, number: null });
+  : sectionHtml({ id: "s1", title: S.intro, name: S.intro, start: doc.preamble.start - 1, end: doc.preamble.end, parent: null, number: null }));
 const pre = doc.sections.length && doc.preamble.end >= doc.preamble.start
-  ? renderBlocks(doc.lines.slice(doc.preamble.start - 1, doc.preamble.end), S) : "";
+  ? images.embed(renderBlocks(doc.lines.slice(doc.preamble.start - 1, doc.preamble.end), S)) : "";
 const legend = [...KINDS].filter(k => usedKinds.has(k)).map(k => `<span class="chip k-${k}">${esc(S.kinds[k])}</span>`).join("");
 
 const config = {
@@ -166,3 +170,7 @@ else {
   console.log(`notes: ${report.summaries} summaries, ${report.decisions} decisions, ${report.flows} flows${report.dropped.length ? `; dropped ${report.dropped.length}` : ""}`);
   report.dropped.forEach(d => console.log(`  dropped: ${d}`));
 }
+const { embedded, bytes, missing } = images.report;
+if (embedded) console.log(`images: ${embedded} embedded (${Math.round(bytes / 1024)} KB)`);
+if (missing.length) console.log(`images missing (rendering a moved copy? pass --base <original folder>): ${missing.join(", ")}`);
+if (bytes > WARN_BYTES) console.log(`warning: images add ${(bytes / 1048576).toFixed(1)} MB to the page; the hosting limit is 16 MB per page`);

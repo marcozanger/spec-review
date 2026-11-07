@@ -109,6 +109,8 @@ details.full > summary { cursor: pointer; font-size: .85rem; color: var(--muted)
 .md blockquote { margin: 0; padding: 4px 14px; border-left: 3px solid var(--line); color: var(--muted); display: grid; gap: 8px }
 .md hr { border: 0; border-top: 1px solid var(--line); width: 100%; margin: 4px 0 }
 .md img { max-width: 100% }
+.img-missing { display: inline-block; padding: 14px 16px; border: 2px dashed var(--warn); border-radius: 8px;
+  color: var(--warn); background: var(--warn-bg); font: .82rem var(--f-mono); overflow-wrap: anywhere }
 .md details.code > summary { cursor: pointer; font-family: var(--f-mono); font-size: .8rem; color: var(--muted); padding: 6px 0 }
 .tbl { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; max-width: 100% }
 table { border-collapse: collapse; width: 100%; font-size: .9rem }
